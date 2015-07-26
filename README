@@ -1,0 +1,113 @@
+--------------------------------------------------------------------------------------
+Arduino Talkie Library                                              Michael Nagy, 2015
+--------------------------------------------------------------------------------------
+
+This library is rooted in the original Talkie project by going-digital.  For lots of
+details on that project see the original/README.md file.  The changes I have made are:
+
+  - adjusted the low-level code to conform to the Atmel ATmega32U4 timer architecture
+  - adjusted i/o mappings to conform to the Pololu A-Star 32U4 Prime Arduino board 
+  - cleaned up the vocabulary files and made them standard c header files
+  - processed the vocabulary files into a pair of index and data (ndx/dat) files
+  - added support for utilizing an sd card to give access to a huge vocabulary
+
+--------------------------------------------------------------------------------------
+
+To fully enable a Pololu A-Star board, I did the following:
+
+  - if installed, removed the jumper shorting /cs to gnd
+  - installed a connection from /cs to Arduino pin 4
+  - connected an audio amplifier or headphones between Arduino pin 5 and gnd
+  - copied talkie.ndx and talkie.dat to the root of a fat32-formatted sd card
+  - inserted the sd card in the sd card socket on the A-Star board
+
+--------------------------------------------------------------------------------------
+
+In addition to the talkie.h and talkie.cpp files which constitute the Arduino library
+proper, you will also find the following:
+
+  talkie.ndx . . . . . . . . sorted text file index into the words in talkie.dat
+                              created by the make_dictionary.py utility
+
+  talkie.dat . . . . . . . . binary file of raw speech datastreams indexed by
+                              talkie.ndx created by the make_dictionary.py utility
+
+  standard_format.py . . . . a python utility to generate well-formatted standardized
+                              header files from the original vocabulary files
+
+  make_dictionary.py . . . . a python utility that collects speech datastreams from
+                              the standardized header files to build the index and
+                               data files
+
+I have included two example sketches with the library, Test_flash.ino and
+Test_sdCard.ino.  Check them out for working examples, or read the following for a
+more formal introduction.
+
+--------------------------------------------------------------------------------------
+
+To utilize this library, copy all the files in this project into a folder named Talkie
+in your Arduino sketchbook/libraries folder, then, in your sketch, do the following:
+
+  #include <SD.h>
+  #include <talkie.h>
+
+  Talkie talkie;
+
+This gives your sketch access to the Talkie library and instantiates a single instance
+of the Talkie class as the object talkie.  You can use that object to create speech in
+either of two modes.
+
+--------------------------------------------------------------------------------------
+FLASH Mode
+--------------------------------------------------------------------------------------
+
+First, you can utilize the individual vocabulary header files, for instance as
+follows:
+
+  #include <standard/vocab_us_large.h>
+
+  talkie.say(spTEMPERATURE);
+
+Examine the various vocabulary files in the standard folder to see what vocabulary
+choices each offers.  The available vocabulary files in the standard folder are:
+
+  demo_toms_diner.h   <-- may be too large to include directly - see below
+  vocab_soundbites.h
+  vocab_uk_acorn.h
+  vocab_us_clock.h
+  vocab_us_large.h
+  vocab_us_male.h
+  vocab_us_ti99.h
+
+Your vocabulary is limited by the amount of flash memory you have available.  Also,
+there is some duplication of words between vocabulary headers, so you might hit some
+conflicts if you try to include more than one at the same time.
+
+--------------------------------------------------------------------------------------
+SD Card Mode
+--------------------------------------------------------------------------------------
+
+Alternatively, if you set up an sd card properly (see instructions above), you can
+take advantage of the ability to read vocabulary directly from the sd card.  This
+allows you to keep your Arduino sketch more compact (using less flash memory), and
+also allows you to access vocabulary that is too large for flash memory (such as the
+'diner' datastream which encodes the entire 2-minute Susan Vega song Tom's Diner).
+For example:
+
+  talkie.sayCard("diner");
+
+Examine the talkie.ndx file in a text editor to see the vocabulary available via this
+technique.  Currently, the talkie.ndx file includes a complete set of all the unique
+words and phrases defined by all of the vocabulary header files listed above.  In the
+cases where the same phrase is defined in more than one header file, the first one
+processed by the make_dictionary.py utility is included, and you can influence this
+order via the 'First' and 'Final' strings in the make_dictionary.py program.  In
+cases such as for the word 'zero', this means you can decide to prefer the uk or the
+us version.
+
+See the notes at the top of the standard_format.py and make_dictionary.py utilities
+themselves for additional information on how to run them and what exactly they do.
+
+--------------------------------------------------------------------------------------
+End.
+--------------------------------------------------------------------------------------
